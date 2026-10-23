@@ -1,0 +1,26 @@
+snowflake-ti-dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      database: TRANSFORMED_DEV
+      schema: TI
+      warehouse: SNOWFLAKE_DBT_TI_DEV_WH
+      role: DEV_ETL_SERVICE
+      threads: 4
+    
+    qa:
+      type: snowflake
+      database: TRANSFORMED_QA
+      schema: TI
+      warehouse: SNOWFLAKE_DBT_TI_QA_WH
+      role: QA_ETL_SERVICE
+      threads: 4
+    
+    prod:
+      type: snowflake
+      database: TRANSFORMED
+      schema: TI
+      warehouse: SNOWFLAKE_DBT_TI_PROD_WH
+      role: ETL_SERVICE
+      threads: 4

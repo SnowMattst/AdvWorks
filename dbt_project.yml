@@ -1,0 +1,107 @@
+name: 'celanytics'
+version: '1.0.0'
+config-version: 2
+
+profile: 'snowflake-ti-dbt'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+vars:
+  batch_name: 'DBT_BATCH_DAILY'
+  is_archival_required: true
+
+on-run-start:
+  - "{{ batch_audit_start() }}"
+
+on-run-end:
+  - "{{ batch_audit_end() }}"
+
+models:
+  celanytics:
+
+    # Silver layer (all source systems)
+    silver:
+      +materialized: incremental
+      +incremental_strategy: merge
+      +on_schema_change: sync_all_columns
+      +transient: false
+      +merge_exclude_columns:
+        - CREATED_DATETIME
+      +meta:
+        layer: "SILVER"
+      +tags:
+        - silver
+
+      # CHIP source system
+      chip:
+        +meta:
+          source_system: "CHIP"
+          layer: "SILVER"
+        +tags:
+          - chip
+          - silver
+      
+      # Sample manager source system
+      sample_manager:
+        +meta:
+          source_system: "SAMPLE_MANAGER"
+          layer: "SILVER"
+        +tags:
+          - sample_manager
+          - silver
+
+      # SAP source system
+      sap:
+        +meta:
+          source_system: "SAP"
+          layer: "SILVER"
+        +tags:
+          - sap
+          - silver
+
+    curated:
+      +database: "{% if target.name == 'prod' %}CURATED{% elif target.name == 'qa' %}CURATED_QA{% else %}CURATED_DEV{% endif %}"
+      +materialized: incremental
+      +incremental_strategy: merge
+      +on_schema_change: sync_all_columns
+      +transient: false
+      +merge_exclude_columns:
+        - CREATED_DATETIME
+      +meta:
+        layer: "CURATED"
+      +tags:
+        - curated
+
+      product:
+        +meta:
+          source_system: "PRODUCT"
+          layer: "CURATED"
+        +tags:
+          - product
+          - curated
+      
+      work:
+        +meta:
+          source_system: "WORK"
+          layer: "CURATED"
+        +tags:
+          - work
+          - curated
+
+    # Presentation layer (consumption views)
+    presentation:
+      +materialized: view
+      +meta:
+        layer: "PRESENTATION"
+      +tags:
+        - presentation
+
+      # CHIP source system
+      chip:
+        +meta:
+          source_system: "CHIP"
+          layer: "PRESENTATION"
+        +tags:
+          - chip
+          - presentation
